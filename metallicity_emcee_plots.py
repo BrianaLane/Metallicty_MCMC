@@ -1,0 +1,109 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Ellipse
+import corner
+import Maiolino_relation_functions as mrf
+
+def build_corner_plot(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
+	fig = corner.corner(flatchain, labels=["$X$", "$E(b-v)$"], truths=[mc_x, mc_E_bv])
+	if show:
+		plt.show()
+	if save:
+		fig.savefig(object+"_cornerplot.png")
+
+def plot_best_solution(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
+	x_samples = flatchain[:,0]
+	E_bv_samples = flatchain[:,1]
+
+	#make the confidience interval plots seen in the maiolino paper
+	cov = np.cov(E_bv_samples, x_samples)
+	lambda_, v = np.linalg.eig(cov)
+	lambda_ = np.sqrt(lambda_)
+
+	ax = plt.subplot(111)
+	for j in xrange(1, 4):
+		ell = Ellipse(xy=(mc_E_bv, mc_x),
+						width=lambda_[0]*j*2, height=lambda_[1]*j*2,
+						angle=np.rad2deg(np.arccos(v[0, 0])))
+		ell.set_facecolor('none')
+		ell.set_edgecolor('red')
+		ax.add_artist(ell)
+
+	plt.scatter(mc_E_bv, mc_x)
+	plt.xlabel('E(b-v)')
+	plt.ylabel('X')
+	plt.ylim(7.0, 9.0)
+	plt.xlim(0.0, 0.60)
+
+	if show:
+		plt.show()
+	if save:
+		fig.savefig(object+"_best_result.png")
+
+def plot_result_ratios(object, mc_x, mc_E_bv, show=False, save=True):
+	met = np.arange(7.5, 9.3, 0.1)
+	met_norm = np.subtract(met,8.69)
+
+	model_mc_x = mc_x[0] - solar_x
+
+
+	ratio_dict = {'R23':[mrf.R23_model, 
+						mrf.R23_ratio(OIII, OII, Hb, E_bv_samples), 
+						mrf.R23_ratio(OIII, OII, Hb, E_mcmc[0]), 
+						mrf.R23_ratio(OIII, OII, Hb, 0), 
+						mrf.R23_ratio_err(OIII, OII, Hb, OIII_e, OII_e, Hb_e, 0)], 
+				'O32':[mrf.RO32_model, 
+						mrf.RO32_ratio(OIII, OII, E_bv_samples),
+						mrf.RO32_ratio(OIII, OII, E_mcmc[0]),
+						mrf.RO32_ratio(OIII, OII, 0), 
+						mrf.RO32_ratio_err(OIII, OII, OIII_e, OII_e, 0)],
+				'O3Hb':[mrf.RO3Hb_model, 
+						mrf.RO3Hb_ratio(OIII, Hb, E_bv_samples),
+						mrf.RO3Hb_ratio(OIII, Hb, E_mcmc[0]),
+						mrf.RO3Hb_ratio(OIII, Hb, 0), 
+						mrf.RO3Hb_ratio_err(OIII, Hb, OIII_e, Hb_e, 0)]}
+
+	f, ax = plt.subplots(1,len(ratio_dict), sharex=True, figsize=(18, 6))
+	f.suptitle('Results')
+
+	for i, ratio in enumerate(ratio_dict):
+		#plot the model curves with disperson 
+		model_log_ratio = np.log10(ratio_dict[ratio][0](met_norm))
+		model_log_disp  = disp_dict[ratio]
+
+		ax[i].plot(met, model_log_ratio, color='black')
+		ax[i].plot(met, model_log_ratio+model_log_disp, ls=':', color='black')
+		ax[i].plot(met, model_log_ratio-model_log_disp, ls=':', color='black')
+
+		#plot the values derived from the model and the observed values
+		mc_model_ratio     = np.log10(ratio_dict[ratio][0](model_mc_x))
+		mc_obs_ratio       = np.log10(ratio_dict[ratio][3])
+		mc_obs_ratio_deRed = np.log10(ratio_dict[ratio][2])
+		mc_obs_ratio_err   = ratio_dict[ratio][4]
+		mc_log_ratio_err   = (np.log10((10**mc_obs_ratio)+mc_obs_ratio_err)-np.log10((10**mc_obs_ratio)-mc_obs_ratio_err))/2
+
+		ax[i].errorbar(mc_x[0], mc_obs_ratio, xerr=(mc_x[1]+mc_x[2])/2, yerr= mc_log_ratio_err, capsize=7, capthick=2, color='green')
+		ax[i].scatter(mc_x[0], mc_obs_ratio_deRed , marker='x', s=100, color='blue')
+
+		#compute the covariance matrix of the ratios and the metallicties 
+		#this is based on the values for X and E_bv
+		ratio_samples = np.log10(ratio_dict[ratio][1])
+
+		cov = np.cov(x_samples, ratio_samples)
+		lambda_, v = np.linalg.eig(cov)
+		lambda_ = np.sqrt(lambda_)
+
+		ell = Ellipse(xy=(mc_x[0], mc_obs_ratio_deRed),width=lambda_[0]*2, height=lambda_[1]*2, angle=np.rad2deg(np.arccos(v[0, 0])))
+		ell.set_facecolor('none')
+		ell.set_edgecolor('red')
+		ax[i].add_artist(ell)
+
+		#plot the axis labels
+		ax[i].set_xlabel('12+log(O/H)')
+		ax[i].set_ylabel('log '+ ratio)
+
+	if show:
+		plt.show()
+	if save:
+		fig.savefig(object+"_result_ratios.png")
+
