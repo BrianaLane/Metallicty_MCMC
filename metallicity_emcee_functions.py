@@ -3,6 +3,9 @@ import emcee
 import math
 import Maiolino_relation_functions as mrf
 
+solar_x = 8.69
+disp_dict = {'R23':0.03771, 'O32':0.16025, 'O3Hb':0.06760, 'NeO2':0.14452, 'O2Hb':0.10521}
+
 #define the log likelihood function
 def lnlike(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e):
 	x = theta[0] - solar_x
@@ -27,6 +30,8 @@ def lnprior(theta):
 	x = theta[0] - solar_x
 	E_bv = theta[1]
 
+	#between metallicity 6.5 and 10
+	#range of E_bv came from Joanna et. al. 2008
 	if (-2.19 < x < 1.31) and (0.01 <= E_bv < 0.60):
 		return 0.0
 
@@ -40,12 +45,12 @@ def lnprob(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e):
 	return lp + lnlike(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e)
 
 #set up and solve the model with MCMC 
-def solve_model_emcee(lnprob, ndim, nwalkers, thetaGuess, args):
-	pos = thetaGuess + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+def solve_model_emcee(lnprob, ndim, nwalkers, nchains, thetaGuess, args):
+	pos = [thetaGuess + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
 	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=args)
 
 	print "Burning in ..."
-	pos, prob, state = sampler.run_mcmc(pos, 200)
+	pos, prob, state = sampler.run_mcmc(pos, nchains[0])
 
 	# Reset the chain to remove the burn-in samples.
 	sampler.reset()
@@ -53,7 +58,7 @@ def solve_model_emcee(lnprob, ndim, nwalkers, thetaGuess, args):
 	# Starting from the final position in the burn-in chain, sample for 1000
 	# steps. (rstate0 is the state of the internal random number generator)
 	print "Running MCMC ..."
-	pos, prob, state = sampler.run_mcmc(pos, 500, rstate0=state)
+	pos, prob, state = sampler.run_mcmc(pos, nchains[1], rstate0=state)
 
 	flat_samples = sampler.flatchain
 

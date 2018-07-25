@@ -4,14 +4,18 @@ from matplotlib.patches import Ellipse
 import corner
 import Maiolino_relation_functions as mrf
 
-def build_corner_plot(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
-	fig = corner.corner(flatchain, labels=["$X$", "$E(b-v)$"], truths=[mc_x, mc_E_bv])
+solar_x = 8.69
+disp_dict = {'R23':0.03771, 'O32':0.16025, 'O3Hb':0.06760, 'NeO2':0.14452, 'O2Hb':0.10521}
+
+
+def build_corner_plot(object_name, flatchain, mc_x, mc_E_bv, show=False, save=True):
+	fig = corner.corner(flatchain, labels=["$X$", "$E(b-v)$"], truths=[mc_x[0], mc_E_bv[0]])
 	if show:
 		plt.show()
 	if save:
 		fig.savefig(object+"_cornerplot.png")
 
-def plot_best_solution(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
+def plot_best_solution(object_name, flatchain, mc_x, mc_E_bv, show=False, save=True):
 	x_samples = flatchain[:,0]
 	E_bv_samples = flatchain[:,1]
 
@@ -22,14 +26,14 @@ def plot_best_solution(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
 
 	ax = plt.subplot(111)
 	for j in xrange(1, 4):
-		ell = Ellipse(xy=(mc_E_bv, mc_x),
+		ell = Ellipse(xy=(mc_E_bv[0], mc_x[0]),
 						width=lambda_[0]*j*2, height=lambda_[1]*j*2,
 						angle=np.rad2deg(np.arccos(v[0, 0])))
 		ell.set_facecolor('none')
 		ell.set_edgecolor('red')
 		ax.add_artist(ell)
 
-	plt.scatter(mc_E_bv, mc_x)
+	plt.scatter(mc_E_bv[0], mc_x[0])
 	plt.xlabel('E(b-v)')
 	plt.ylabel('X')
 	plt.ylim(7.0, 9.0)
@@ -40,26 +44,34 @@ def plot_best_solution(object, flatchain, mc_x, mc_E_bv, show=False, save=True):
 	if save:
 		fig.savefig(object+"_best_result.png")
 
-def plot_result_ratios(object, mc_x, mc_E_bv, show=False, save=True):
+def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, show=False, save=True):
 	met = np.arange(7.5, 9.3, 0.1)
-	met_norm = np.subtract(met,8.69)
-
+	met_norm = np.subtract(met, solar_x)
 	model_mc_x = mc_x[0] - solar_x
 
+	OIII   = args[0]
+	OII    = args[1]
+	Hb     = args[2]
+	OIII_e = args[3]
+	OII_e  = args[4]
+	Hb_e   = args[5]
+
+	x_samples = flatchain[:,0]
+	E_bv_samples = flatchain[:,1]
 
 	ratio_dict = {'R23':[mrf.R23_model, 
 						mrf.R23_ratio(OIII, OII, Hb, E_bv_samples), 
-						mrf.R23_ratio(OIII, OII, Hb, E_mcmc[0]), 
+						mrf.R23_ratio(OIII, OII, Hb, mc_E_bv[0]), 
 						mrf.R23_ratio(OIII, OII, Hb, 0), 
 						mrf.R23_ratio_err(OIII, OII, Hb, OIII_e, OII_e, Hb_e, 0)], 
 				'O32':[mrf.RO32_model, 
 						mrf.RO32_ratio(OIII, OII, E_bv_samples),
-						mrf.RO32_ratio(OIII, OII, E_mcmc[0]),
+						mrf.RO32_ratio(OIII, OII, mc_E_bv[0]),
 						mrf.RO32_ratio(OIII, OII, 0), 
 						mrf.RO32_ratio_err(OIII, OII, OIII_e, OII_e, 0)],
 				'O3Hb':[mrf.RO3Hb_model, 
 						mrf.RO3Hb_ratio(OIII, Hb, E_bv_samples),
-						mrf.RO3Hb_ratio(OIII, Hb, E_mcmc[0]),
+						mrf.RO3Hb_ratio(OIII, Hb, mc_E_bv[0]),
 						mrf.RO3Hb_ratio(OIII, Hb, 0), 
 						mrf.RO3Hb_ratio_err(OIII, Hb, OIII_e, Hb_e, 0)]}
 
