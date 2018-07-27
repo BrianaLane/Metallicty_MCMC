@@ -7,7 +7,7 @@ solar_x = 8.69
 disp_dict = {'R23':0.03771, 'O32':0.16025, 'O3Hb':0.06760, 'NeO2':0.14452, 'O2Hb':0.10521}
 
 #define the log likelihood function
-def lnlike(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e):
+def lnlike(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
 	x = theta[0] - solar_x
 	E_bv = theta[1]
 
@@ -23,7 +23,20 @@ def lnlike(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e):
 	RO32_obs_var = mrf.RO32_ratio_err(OIII, OII, OIII_e, OII_e, E_bv)
 	O3Hb_obs_var = mrf.RO3Hb_ratio_err(OIII, Hb, OIII_e, Hb_e, E_bv)
 
-	return -0.5*((((O3Hb_obs-O3Hb_mod)**2)/np.sqrt(O3Hb_obs_var+O3Hb_mod_var))+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var)))
+	if np.isnan(NeIII):
+		return -0.5*((((O3Hb_obs-O3Hb_mod)**2)/np.sqrt(O3Hb_obs_var+O3Hb_mod_var))
+					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var)))
+
+	else:
+		NeO2_mod = mrf.RNeO2_model(x)
+		NeO2_obs = mrf.RNeO2_ratio(NeIII, OII, E_bv)
+		NeO2_mod_var  = (10**disp_dict['NeO2'])**2
+		NeO2_obs_var = mrf.RNeO2_ratio_err(NeIII, OII, NeIII_e, OII_e, E_bv)
+
+		return -0.5*((((O3Hb_obs-O3Hb_mod)**2)/np.sqrt(O3Hb_obs_var+O3Hb_mod_var))
+					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var))
+					+(((NeO2_obs-NeO2_mod)**2)/np.sqrt(NeO2_obs_var+NeO2_mod_var)))
+
 
 #define the log prior function
 def lnprior(theta):
@@ -38,11 +51,11 @@ def lnprior(theta):
 	return -np.inf
 
 #define log postierior to sovle with emcee
-def lnprob(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e):
+def lnprob(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
 	lp = lnprior(theta)
 	if not np.isfinite(lp):
 		return -np.inf
-	return lp + lnlike(theta, OII, OIII, Hb, OII_e, OIII_e, Hb_e)
+	return lp + lnlike(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e)
 
 #set up and solve the model with MCMC 
 def solve_model_emcee(lnprob, ndim, nwalkers, nchains, thetaGuess, args):
@@ -76,19 +89,25 @@ def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, 
 		object_name = pandas_df[col_dict['Obj_names']].iloc[i]
 		print i, object_name
 
-		flux = [pandas_df[col_dict['OII_flux']].iloc[i], pandas_df[col_dict['OIII_flux']].iloc[i], pandas_df[col_dict['Hb_flux']].iloc[i]] 
-		S_N = [pandas_df[col_dict['OII_SN']].iloc[i], pandas_df[col_dict['OIII_SN']].iloc[i], pandas_df[col_dict['Hb_SN']].iloc[i]]
+		flux = [pandas_df[col_dict['OII_flux']].iloc[i], pandas_df[col_dict['OIII_flux']].iloc[i], 
+				pandas_df[col_dict['Hb_flux']].iloc[i], pandas_df[col_dict['NeIII_flux']].iloc[i]] 
+		S_N = [pandas_df[col_dict['OII_SN']].iloc[i], pandas_df[col_dict['OIII_SN']].iloc[i], 
+				pandas_df[col_dict['Hb_SN']].iloc[i], pandas_df[col_dict['NeIII_SN']].iloc[i]]
 		flux_err = np.divide(flux, S_N)
 
-		OII  = flux[0]
-		OIII = flux[1]
-		Hb   = flux[2]
+		OII   = flux[0]
+		OIII  = flux[1]
+		Hb    = flux[2]
+		NeIII = flux[3]
 
-		OII_e  = flux_err[0]
-		OIII_e = flux_err[1]
-		Hb_e   = flux_err[2]
+		OII_e   = flux_err[0]
+		OIII_e  = flux_err[1]
+		Hb_e    = flux_err[2]
+		NeIII_e = flux_err[3]
 
-		args = (OII, OIII, Hb, OII_e, OIII_e, Hb_e)
+		args = (OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e)
+		if not np.isnan(NeIII):
+			print 'Using NeIII'
 
 		#*********************#
 		# Run emcee and plots #
@@ -96,6 +115,7 @@ def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, 
 		flat_samples, x_mcmc, E_mcmc = solve_model_emcee(lnprob, ndim, nwalkers, nchains, theta_guess, args)
 		x_lis.append(x_mcmc)
 		E_lis.append(E_mcmc)
+		print x_mcmc[0], E_mcmc[0]
 
 		if show_plots or save_plots:
 			mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)

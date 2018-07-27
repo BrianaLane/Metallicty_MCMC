@@ -20,7 +20,7 @@ col_dict = {'Obj_names':'HPS_name',
 			'Hb_SN':'Hb_SN',
 			'NeIII_SN':'NeIII1_SN'}
 
-hps = hps.dropna(subset=[col_dict['OII_flux'], col_dict['OIII_flux'], col_dict['Hb_Flux']])
+hps = hps.dropna(subset=[col_dict['OII_flux'], col_dict['OIII_flux'], col_dict['Hb_flux']])
 print 'Found '+str(len(hps))+' objects with [OII], [OIII], and Hb'
 
 #************************#
