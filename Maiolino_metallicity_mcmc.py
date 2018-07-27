@@ -1,7 +1,6 @@
 import numpy as np
 import Maiolino_relation_functions as mrf
 import metallicity_emcee_functions as mef
-import metallicity_emcee_plots as mc_plots
 import pandas as pd
 
 #***********************************#
@@ -32,4 +31,4 @@ thetaGuess = [8.45, avg_E_bv]
 ndim, nwalkers = 2, 100
 nchains = (200, 500) #200 for burn in and 500 after
 
-hps = mef.find_metallicity(hps, col_dict, thetaGuess, ndim, nwalkers, nchains, show_plots=False, save_plots=False)
+hps = mef.find_metallicity(hps, col_dict, thetaGuess, ndim, nwalkers, nchains, show_plots=True, save_plots=False)

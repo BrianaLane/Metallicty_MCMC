@@ -38,6 +38,7 @@ def plot_best_solution(object_name, flatchain, mc_x, mc_E_bv, show=False, save=T
 	plt.ylabel('X')
 	plt.ylim(7.0, 9.0)
 	plt.xlim(0.0, 0.60)
+	plt.text(x, y, s, bbox=dict(facecolor='red', alpha=0.5))
 
 	if show:
 		plt.show()
@@ -49,12 +50,14 @@ def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, show=False, 
 	met_norm = np.subtract(met, solar_x)
 	model_mc_x = mc_x[0] - solar_x
 
-	OIII   = args[0]
-	OII    = args[1]
-	Hb     = args[2]
-	OIII_e = args[3]
-	OII_e  = args[4]
-	Hb_e   = args[5]
+	OIII    = args[0]
+	OII     = args[1]
+	Hb      = args[2]
+	NeIII   = args[3]
+	OIII_e  = args[4]
+	OII_e   = args[5]
+	Hb_e    = args[6]
+	NeIII_e = args[7]
 
 	x_samples = flatchain[:,0]
 	E_bv_samples = flatchain[:,1]
@@ -74,6 +77,14 @@ def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, show=False, 
 						mrf.RO3Hb_ratio(OIII, Hb, mc_E_bv[0]),
 						mrf.RO3Hb_ratio(OIII, Hb, 0), 
 						mrf.RO3Hb_ratio_err(OIII, Hb, OIII_e, Hb_e, 0)]}
+
+	if not np.isnan(NeIII):
+
+		ratio_dict['NeO2'] = [mrf.RNeO2_model, 
+							mrf.RNeO2_ratio(NeIII, OII, E_bv_samples),
+							mrf.RNeO2_ratio(NeIII, OII, mc_E_bv[0]),
+							mrf.RNeO2_ratio(NeIII, OII, 0), 
+							mrf.RNeO2_ratio_err(NeIII, OII, NeIII_e, OII_e, 0)]
 
 	f, ax = plt.subplots(1,len(ratio_dict), sharex=True, figsize=(18, 6))
 	f.suptitle('Results')

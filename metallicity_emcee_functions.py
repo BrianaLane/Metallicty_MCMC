@@ -2,6 +2,7 @@ import numpy as np
 import emcee
 import math
 import Maiolino_relation_functions as mrf
+import metallicity_emcee_plots as mc_plots
 
 solar_x = 8.69
 disp_dict = {'R23':0.03771, 'O32':0.16025, 'O3Hb':0.06760, 'NeO2':0.14452, 'O2Hb':0.10521}
@@ -36,7 +37,6 @@ def lnlike(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
 		return -0.5*((((O3Hb_obs-O3Hb_mod)**2)/np.sqrt(O3Hb_obs_var+O3Hb_mod_var))
 					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var))
 					+(((NeO2_obs-NeO2_mod)**2)/np.sqrt(NeO2_obs_var+NeO2_mod_var)))
-
 
 #define the log prior function
 def lnprior(theta):
@@ -118,8 +118,8 @@ def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, 
 		print x_mcmc[0], E_mcmc[0]
 
 		if show_plots or save_plots:
-			mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
-			mc_plots.plot_best_solution(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
+			#mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
+			#mc_plots.plot_best_solution(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
 			mc_plots.plot_result_ratios(object_name, flat_samples, x_mcmc, E_mcmc, args, show=show_plots, save=save_plots)
 
 		print '\n'
