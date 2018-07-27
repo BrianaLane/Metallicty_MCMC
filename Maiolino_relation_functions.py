@@ -55,36 +55,6 @@ def RNeO2_ratio(NeIII, OII, E_bv):
 def RO2Hb_ratio(OII, Hb, E_bv):
 	return (OII*reddening(3727, E_bv))/(Hb*reddening(4861, E_bv))
 
-#**************************#
-# Observed Ratio Functions #
-#**************************#
-
-def RO32_ratio_err(OIII, OII, OIII_e, OII_e, E_bv):
-	e_5007 = reddening(5007, E_bv)
-	e_3727 = reddening(3727, E_bv)
-	return (((e_5007*OIII*OII_e)/((OII**2)*e_3727))**2)+(((e_5007*OIII_e)/(OII*e_3727))**2)
-    
-def R23_ratio_err(OIII, OII, Hb, OIII_e, OII_e, Hb_e, E_bv):
-	e_5007 = reddening(5007, E_bv)
-	e_3727 = reddening(3727, E_bv)
-	e_4861 = reddening(4861, E_bv)
-	return (((e_3727*OII_e)/(Hb*e_4861))**2)+((((1+(1/2.98))*e_5007*OIII_e)/(Hb*e_4861))**2)+((((1+(1/2.98))*e_5007*OIII*Hb_e)/((Hb**2)*e_4861))**2)
-
-def RO3Hb_ratio_err(OIII, Hb, OIII_e, Hb_e, E_bv):
-	e_5007 = reddening(5007, E_bv)
-	e_4861 = reddening(4861, E_bv)
-	return (((e_5007*OIII*Hb_e)/((Hb**2)*e_4861))**2)+(((e_5007*OIII_e)/(Hb*e_4861))**2)
-
-def RNeO2_ratio(NeIII, OII, NeIII_e, OII_e, E_bv):
-	e_3727 = reddening(3727, E_bv)
-	e_3869 = reddening(3869, E_bv)
-	return (((e_3869*NeIII*OII_e)/((OII**2)*e_3727))**2)+(((e_3869*NeIII_e)/(OII*e_3727))**2)
-
-def RO2Hb_ratio(OII, Hb, OII_e, Hb_e, E_bv):
-	e_3727 = reddening(3727, E_bv)
-	e_4861 = reddening(4861, E_bv)
-	return (((e_3727*OII*Hb_e)/((Hb**2)*e_4861))**2)+(((e_3727*OII_e)/(Hb*e_4861))**2)
-
 #********************************#
 # Observed Ratio Error Functions #
 #********************************#

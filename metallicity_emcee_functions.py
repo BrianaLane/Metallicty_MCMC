@@ -61,10 +61,56 @@ def solve_model_emcee(lnprob, ndim, nwalkers, nchains, thetaGuess, args):
 	pos, prob, state = sampler.run_mcmc(pos, nchains[1], rstate0=state)
 
 	flat_samples = sampler.flatchain
-
 	samples = sampler.chain[:, :, :].reshape((-1, ndim))
 
 	x_mcmc, E_mcmc = map(lambda v: (v[1], v[2]-v[1], v[1]-v[0]),
 						zip(*np.percentile(samples, [16, 50, 84], axis=0)))
 
 	return flat_samples, x_mcmc, E_mcmc
+
+def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, show_plots=False, save_plots=True):
+
+	x_lis = []
+	E_lis = []
+	for i in range(len(pandas_df)):
+		object_name = pandas_df[col_dict['Obj_names']].iloc[i]
+		print i, object_name
+
+		flux = [pandas_df[col_dict['OII_flux']].iloc[i], pandas_df[col_dict['OIII_flux']].iloc[i], pandas_df[col_dict['Hb_flux']].iloc[i]] 
+		S_N = [pandas_df[col_dict['OII_SN']].iloc[i], pandas_df[col_dict['OIII_SN']].iloc[i], pandas_df[col_dict['Hb_SN']].iloc[i]]
+		flux_err = np.divide(flux, S_N)
+
+		OII  = flux[0]
+		OIII = flux[1]
+		Hb   = flux[2]
+
+		OII_e  = flux_err[0]
+		OIII_e = flux_err[1]
+		Hb_e   = flux_err[2]
+
+		args = (OII, OIII, Hb, OII_e, OIII_e, Hb_e)
+
+		#*********************#
+		# Run emcee and plots #
+		#*********************#
+		flat_samples, x_mcmc, E_mcmc = solve_model_emcee(lnprob, ndim, nwalkers, nchains, theta_guess, args)
+		x_lis.append(x_mcmc)
+		E_lis.append(E_mcmc)
+
+		if show_plots or save_plots:
+			mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
+			mc_plots.plot_best_solution(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
+			mc_plots.plot_result_ratios(object_name, flat_samples, x_mcmc, E_mcmc, args, show=show_plots, save=save_plots)
+
+		print '\n'
+
+	pandas_df['Metal'] = [x[0] for x in x_lis]
+	pandas_df['Metal_Uerr'] = [x[1] for x in x_lis]
+	pandas_df['Metal_Lerr'] = [x[2] for x in x_lis]
+	pandas_df['E(B-V)_mc'] = [e[0] for e in E_lis]
+	pandas_df['E(B-V)_mc_Uerr'] = [e[1] for e in E_lis]
+	pandas_df['E(B-V)_mc_Lerr'] = [e[2] for e in E_lis]
+
+	return pandas_df
+
+
