@@ -1,4 +1,5 @@
 import numpy as np
+import os.path as op
 import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 import corner
@@ -8,14 +9,16 @@ solar_x = 8.69
 disp_dict = {'R23':0.03771, 'O32':0.16025, 'O3Hb':0.06760, 'NeO2':0.14452, 'O2Hb':0.10521}
 
 
-def build_corner_plot(object_name, flatchain, mc_x, mc_E_bv, show=False, save=True):
+def build_corner_plot(object_name, flatchain, mc_x, mc_E_bv, path, show=False, save=True):
 	fig = corner.corner(flatchain, labels=["$X$", "$E(b-v)$"], truths=[mc_x[0], mc_E_bv[0]])
 	if show:
 		plt.show()
 	if save:
-		fig.savefig(object+"_cornerplot.png")
+		fig.savefig(op.join(path, object_name+"_cornerplot.png"))
 
-def plot_best_solution(object_name, flatchain, mc_x, mc_E_bv, show=False, save=True):
+	plt.close()
+
+def plot_best_solution(object_name, flatchain, mc_x, mc_E_bv, path, show=False, save=True):
 	x_samples = flatchain[:,0]
 	E_bv_samples = flatchain[:,1]
 
@@ -36,16 +39,20 @@ def plot_best_solution(object_name, flatchain, mc_x, mc_E_bv, show=False, save=T
 	plt.scatter(mc_E_bv[0], mc_x[0])
 	plt.xlabel('E(b-v)')
 	plt.ylabel('X')
-	plt.ylim(7.0, 9.0)
 	plt.xlim(0.0, 0.60)
-	plt.text(x, y, s, bbox=dict(facecolor='red', alpha=0.5))
+	plt.ylim(7.0, 10.0)
+	plt.text(0.5, 7.3, 'X: '+str(round(mc_x[0],2))+'\n'+'E(B-V): '+str(round(mc_E_bv[0],2)), 
+		horizontalalignment='center', verticalalignment='center', bbox=dict(facecolor='red', alpha=0.3)) 
+	#plt.text(x, y, s, bbox=dict(facecolor='red', alpha=0.5))
 
 	if show:
 		plt.show()
 	if save:
-		fig.savefig(object+"_best_result.png")
+		plt.savefig(op.join(path, object_name+"_best_result.png"))
 
-def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, show=False, save=True):
+	plt.close()
+
+def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, path, show=False, save=True):
 	met = np.arange(7.5, 9.3, 0.1)
 	met_norm = np.subtract(met, solar_x)
 	model_mc_x = mc_x[0] - solar_x
@@ -128,5 +135,7 @@ def plot_result_ratios(object_name, flatchain, mc_x, mc_E_bv, args, show=False, 
 	if show:
 		plt.show()
 	if save:
-		fig.savefig(object+"_result_ratios.png")
+		plt.savefig(op.join(path, object_name+"_result_ratios.png"))
+		
+	plt.close()
 

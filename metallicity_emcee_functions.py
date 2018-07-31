@@ -1,6 +1,7 @@
 import numpy as np
 import emcee
 import math
+import os
 import Maiolino_relation_functions as mrf
 import metallicity_emcee_plots as mc_plots
 
@@ -38,6 +39,37 @@ def lnlike(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
 					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var))
 					+(((NeO2_obs-NeO2_mod)**2)/np.sqrt(NeO2_obs_var+NeO2_mod_var)))
 
+#define the log likelihood function
+def lnlike_R23(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
+	x = theta[0] - solar_x
+	E_bv = theta[1]
+
+	RO32_mod = mrf.RO32_model(x)
+	R23_mod  = mrf.R23_model(x)
+
+	RO32_obs = mrf.RO32_ratio(OIII, OII, E_bv)
+	R23_obs  = mrf.R23_ratio(OIII, OII, Hb, E_bv)
+
+	RO32_mod_var = (10**disp_dict['O32'])**2
+	R23_mod_var  = (10**disp_dict['R23'])**2
+
+	RO32_obs_var = mrf.RO32_ratio_err(OIII, OII, OIII_e, OII_e, E_bv)
+	R23_obs_var = mrf.R23_ratio_err(OIII, OII, Hb, OIII_e, OII_e, Hb_e, E_bv)
+
+	if np.isnan(NeIII):
+		return -0.5*((((R23_obs-R23_mod)**2)/np.sqrt(R23_obs_var+R23_mod_var))
+					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var)))
+
+	else:
+		NeO2_mod = mrf.RNeO2_model(x)
+		NeO2_obs = mrf.RNeO2_ratio(NeIII, OII, E_bv)
+		NeO2_mod_var  = (10**disp_dict['NeO2'])**2
+		NeO2_obs_var = mrf.RNeO2_ratio_err(NeIII, OII, NeIII_e, OII_e, E_bv)
+
+		return -0.5*((((R23_obs-R23_mod)**2)/np.sqrt(R23_obs_var+R23_mod_var))
+					+(((RO32_obs-RO32_mod)**2)/np.sqrt(RO32_obs_var+RO32_mod_var))
+					+(((NeO2_obs-NeO2_mod)**2)/np.sqrt(NeO2_obs_var+NeO2_mod_var)))
+
 #define the log prior function
 def lnprior(theta):
 	x = theta[0] - solar_x
@@ -59,7 +91,7 @@ def lnprob(theta, OII, OIII, Hb, NeIII, OII_e, OIII_e, Hb_e, NeIII_e):
 
 #set up and solve the model with MCMC 
 def solve_model_emcee(lnprob, ndim, nwalkers, nchains, thetaGuess, args):
-	pos = [thetaGuess + 1e-4*np.random.randn(ndim) for i in range(nwalkers)]
+	pos = [thetaGuess + 1e-1*np.random.randn(ndim) for i in range(nwalkers)]
 	sampler = emcee.EnsembleSampler(nwalkers, ndim, lnprob, args=args)
 
 	print "Burning in ..."
@@ -81,7 +113,7 @@ def solve_model_emcee(lnprob, ndim, nwalkers, nchains, thetaGuess, args):
 
 	return flat_samples, x_mcmc, E_mcmc
 
-def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, show_plots=False, save_plots=True):
+def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, show_plots=False, save_plots=True, plot_path='./'):
 
 	x_lis = []
 	E_lis = []
@@ -118,9 +150,13 @@ def find_metallicity(pandas_df, col_dict, theta_guess, ndim, nwalkers, nchains, 
 		print x_mcmc[0], E_mcmc[0]
 
 		if show_plots or save_plots:
-			#mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
-			#mc_plots.plot_best_solution(object_name, flat_samples, x_mcmc, E_mcmc, show=show_plots, save=save_plots)
-			mc_plots.plot_result_ratios(object_name, flat_samples, x_mcmc, E_mcmc, args, show=show_plots, save=save_plots)
+			if not os.path.isdir(os.path.join(plot_path, 'corner_plots')):
+				os.mkdir(os.path.join(plot_path, 'corner_plots' ))
+				os.mkdir(os.path.join(plot_path, 'best_solution_plots' ))
+				os.mkdir(os.path.join(plot_path, 'result_ratio_plots' ))
+			mc_plots.build_corner_plot(object_name, flat_samples, x_mcmc, E_mcmc, os.path.join(plot_path, 'corner_plots'), show=show_plots, save=save_plots)
+			mc_plots.plot_best_solution(object_name, flat_samples, x_mcmc, E_mcmc, os.path.join(plot_path, 'best_solution_plots'), show=show_plots, save=save_plots)
+			mc_plots.plot_result_ratios(object_name, flat_samples, x_mcmc, E_mcmc, args, os.path.join(plot_path, 'result_ratio_plots'), show=show_plots, save=save_plots)
 
 		print '\n'
 
