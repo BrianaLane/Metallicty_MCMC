@@ -40,6 +40,6 @@ nchains = (200, 500) #number of MC chains (200 for burn in and 500 after)
 #***************************#
 save_path = 'met_mcmc_results'
 hps = mef.find_metallicity(hps, col_dict, thetaGuess, ndim, nwalkers, nchains, show_plots=False, save_plots=True, plot_path=save_path)
-#hps.to_csv('HPS_cat_table.dat')
+hps.to_csv('HPS_cat_table.dat')
 pr.plot_mass_z_relation(hps, plot_path=save_path)
 
