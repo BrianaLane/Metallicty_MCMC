@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import os.path as op
 #import plot_results as pr
-import greg_metallicity_emcee as met_mc
+import metallicity_emcee_class as met_mc
 
 #***********************************#
 # Load line fluxes and their errors #
