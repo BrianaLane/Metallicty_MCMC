@@ -37,6 +37,16 @@ def RO2Hb_model(x):
 	o2hb = 0.5603+(0.0450*x)+(-1.8017*(x**2))+(-1.8434*(x**3))+(-0.6549*(x**4))
 	return 10**o2hb
 
+#Functions for Curti 2017 Models 
+
+def RO32_model_c(x):
+    r_O32 = -0.691+(-2.944*x)+(-1.308*(x**2))
+    return 10**r_O32
+
+def R23_model_c(x):
+    r_23 = 0.527+(-1.569*x)+(-1.652*(x**2))+(-0.421*(x**3))
+    return 10**r_23
+
 #**************************#
 # Observed Ratio Functions #
 #**************************#
